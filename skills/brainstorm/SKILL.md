@@ -32,6 +32,7 @@ When you need to generate and evaluate multiple approaches to a problem before c
    - Build a comparison matrix against the criteria
    - Where architectural approaches are compared, use Mermaid diagrams to illustrate key differences
    - Make a recommendation with rationale
+   - **If the user explicitly accepts the recommendation**, record it in the decision ledger per `shared/decision-log.md` — the rejected ideas go in the entry's `rejected[]`; run the collision check first (a collision stops for the user). A recommendation merely presented, not endorsed, is either left unrecorded or logged as `status: proposed` — never `accepted`.
 
 5. **Link**
    - Add cross-references to related research or specs in `related` frontmatter

@@ -9,5 +9,5 @@ Target repository: {{TARGET_REPO}}
 Diff or file scope: {{SCOPE}}
 Focus areas: {{FOCUS_LIST}}
 
-Do not read plans, specifications, or designs. Validate every finding against the full file, callers, tests, and relevant history. Return only findings and questions using the quality-scan output format.
+Do not read plans, specifications, designs, or the decision ledger (`Decisions/`, `DECISIONS.md`). Validate every finding against the full file, callers, tests, and relevant history. Return only findings and questions using the quality-scan output format.
 ```

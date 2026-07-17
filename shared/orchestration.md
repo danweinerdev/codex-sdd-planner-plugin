@@ -23,4 +23,4 @@ Dispatch rules: substitute every `{{PLACEHOLDER}}` before dispatch; reviewer dis
 
 ## Session orientation
 
-Read `planning-config.json`, active plan frontmatter, current phase task status, and the latest debrief before resuming implementation. Read full artifact bodies only when the current decision needs them.
+Read `planning-config.json`, active plan frontmatter, current phase task status, and the latest debrief before resuming implementation. Also read the decision ledger's **frontmatter**, if it exists (`Decisions/decisions.md` under the planning root, or `<repo-root>/DECISIONS.md` for external planning roots — `shared/decision-log.md` § Ledger location) — `accepted` entries are standing constraints on all planning work, and after compaction the ledger is the truth about which decision won, not the summary's memory. Read full artifact bodies only when the current decision needs them.

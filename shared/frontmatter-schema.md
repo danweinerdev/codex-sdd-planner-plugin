@@ -8,7 +8,7 @@ Every artifact includes these fields (one exception: `phase` docs omit `tags` an
 
 ```yaml
 title: "Human-readable title"
-type: research | brainstorm | spec | design | plan | phase | debrief | retro | diagram
+type: research | brainstorm | spec | design | plan | phase | debrief | retro | diagram | decision-log
 status: <type-specific, see below>
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
@@ -34,6 +34,13 @@ Any artifact may additionally declare an optional `refresh_when` field — a lis
 | debrief | `draft`, `complete` |
 | retro | `draft`, `complete` |
 | diagram | `draft`, `active`, `archived` |
+| decision-log | `active`, `archived` |
+
+## Decision Ledger Schema
+
+The decision ledger (`Decisions/decisions.md`, type `decision-log`) carries a `decisions[]` frontmatter array — the same structured-list convention as `phases[]`/`tasks[]`. Entry fields, lifecycle rules (append-only; accepted entries mutate only via `status` + `superseded_by`), the collision procedure, and distribution rules are defined in `shared/decision-log.md` — the single source of truth for this artifact.
+
+Per-entry statuses (these are entry-level fields inside `decisions[]`, **not** artifact `type` statuses — the ledger artifact itself is only ever `active` or `archived`): `proposed`, `accepted`, `rejected`, `superseded`. `rejected` entries are kept as negative truths, never deleted.
 
 ## Plan Schema
 

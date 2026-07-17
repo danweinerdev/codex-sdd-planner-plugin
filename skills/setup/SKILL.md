@@ -14,7 +14,7 @@ Read `shared/agent-runtime.md`, `shared/path-resolution.md`, `shared/vcs-detecti
 1. Determine the target directory. Use the user-provided path verbatim where possible; otherwise use the current directory. Stop for a bare git repository.
 2. Determine `planningRoot`: explicit user value, existing `planning-config.json`, inherited worktree value, then `"."`. Preserve the chosen value exactly in config; resolve relative paths only for filesystem operations.
 3. Write or preserve `<target>/planning-config.json`. Include optional `dashboard`, `title`, and `description` only when requested.
-4. Create missing planning directories: `Plans/`, `Research/`, `Brainstorm/`, `Specs/`, `Designs/`, `Retro/`, and `Diagrams/`.
+4. Create missing planning directories: `Plans/`, `Research/`, `Brainstorm/`, `Specs/`, `Designs/`, `Decisions/`, `Retro/`, and `Diagrams/`.
 5. For Git or Perforce, ensure the appropriate ignore file contains `Dashboard/` and `planning-config.local.json` without duplicating entries.
 6. Offer, but do not unprompted create, `AGENTS.md` guidance. Use the full template for a dedicated planning repository; append the snippet for an existing project. Preserve existing user instructions.
 7. Do not create Claude launchers, `CLAUDE.md`, `.claude/` folders, symlinks, or copied skill files. The runtime discovers these skills through its own skill-discovery paths (a plugin installation or the `.agents/skills` convention).

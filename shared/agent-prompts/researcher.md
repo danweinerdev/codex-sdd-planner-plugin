@@ -21,6 +21,7 @@ If an input is missing or names a path that does not exist, report the mismatch 
    - `Designs/` — existing architecture documents
    - `Plans/` — related or dependent plans (filter by each plan's frontmatter `status`; skip plans with status `complete` or `archived` unless explicitly asked)
    - `Retro/` — lessons learned that may apply
+   - The decision ledger — `Decisions/decisions.md` under the planning root, or `<repo-root>/DECISIONS.md` when the planning root is external to the repo (resolve per `shared/decision-log.md` § Ledger location). Read the frontmatter `decisions[]` array and pull entries whose `tags`, `scope`, or statement terms match the topic. `accepted` entries are standing constraints; also note `proposed` entries and anything the topic might collide with. When checking rejected alternatives, grep `Decisions/archive-*.md` too — archived `rejected` entries are still negative truths
 
 2. **Search the codebase** in the target repository:
    - Search for implementations related to the topic
@@ -43,6 +44,10 @@ If the dispatching skill requests a specific section structure, that structure o
 
 ### Existing Artifacts
 - [artifact path]: brief summary of relevant content
+
+### Recorded Decisions
+- [D-NNNN] (status): statement — why it bears on this topic
+- Omit the section only when the ledger is absent or nothing matches (say which, per absence-claim discipline). Flag any tension between a recorded decision and another artifact or the requested work — that is a collision the caller must surface, not smooth over.
 
 ### Codebase Findings
 - [file path]: what was found and why it's relevant
