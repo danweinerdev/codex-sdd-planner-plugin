@@ -1,33 +1,33 @@
 # Language-Specific Verification — What Good Looks Like
 
-What "good and complete" looks like beyond passing tests. The per-language detail lives in **model-only skills** (`skills/<lang>-specifications/`), each covering **structural verification tools** (sanitizers, static analysis, type checkers) and **quality patterns** (idioms, safety conventions, review checkpoints) specific to that language. These run during implementation, not as deferred acceptance criteria.
+What "good and complete" looks like beyond passing tests. The per-language detail lives in the reference files under `shared/language-specs/`, each covering **structural verification tools** (sanitizers, static analysis, type checkers) and **quality patterns** (idioms, safety conventions, review checkpoints) specific to that language. These run during implementation, not as deferred acceptance criteria.
 
 ## How to Use
 
 1. Detect the project language from file extensions, build files, or project config.
-2. Apply the matching `<lang>-specifications` skill. In the **primary context** the skill auto-loads by description when you're planning, implementing, or reviewing that language — its body arrives without an explicit read. In a **restricted agent context** (or to load it deliberately), read the skill body directly from `skills/<lang>-specifications/SKILL.md` in the plugin directory.
+2. Read the matching reference file from `shared/language-specs/` (each file opens with its detection hints). This applies in every context — the primary agent and dispatched subagents alike read the file directly; nothing auto-loads.
 3. Include the relevant checks in your output (verification fields, testing strategy, review findings).
 
-When a project uses multiple languages, apply each relevant skill.
+When a project uses multiple languages, apply each relevant file.
 
 ## Skill Integration
 
-- **`/design`** — include relevant tools in the Testing Strategy section
-- **`/plan`** — include in task `verification` fields where appropriate (both when creating a new plan and when expanding an existing one)
-- **`/implement`** — run these checks as part of verifying task completion
-- **`/code-review`** — check that structural verification was actually performed
+- **Design** — include relevant tools in the Testing Strategy section
+- **Plan** — include in task `verification` fields where appropriate (both when creating a new plan and when expanding an existing one)
+- **Implement** — run these checks as part of verifying task completion
+- **Code Review** — check that structural verification was actually performed
 
 ## Languages
 
-| Language | Skill |
-|----------|-------|
-| C / C++ | `skills/cpp-specifications/SKILL.md` |
-| Rust | `skills/rust-specifications/SKILL.md` |
-| Go | `skills/go-specifications/SKILL.md` |
-| Python | `skills/python-specifications/SKILL.md` |
-| TypeScript / JavaScript | `skills/typescript-specifications/SKILL.md` |
-| Java / Kotlin | `skills/java-specifications/SKILL.md` |
-| Swift | `skills/swift-specifications/SKILL.md` |
+| Language | Reference |
+|----------|-----------|
+| C / C++ | `shared/language-specs/cpp.md` |
+| Rust | `shared/language-specs/rust.md` |
+| Go | `shared/language-specs/go.md` |
+| Python | `shared/language-specs/python.md` |
+| TypeScript / JavaScript | `shared/language-specs/typescript.md` |
+| Java / Kotlin | `shared/language-specs/java.md` |
+| Swift | `shared/language-specs/swift.md` |
 
 ## Unlisted Languages
 

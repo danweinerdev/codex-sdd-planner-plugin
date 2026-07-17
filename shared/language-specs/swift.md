@@ -1,9 +1,6 @@
----
-name: swift-specifications
-description: "Structural verification for Swift — SwiftLint, TSAN for concurrency. Load when planning, implementing, or reviewing Swift code (.swift; Package.swift, .xcodeproj)."
----
-
 # Swift — Structural Verification
+
+Apply when planning, implementing, or reviewing code detected by `.swift`; `Package.swift`, `.xcodeproj`. Dispatched via `shared/language-verification.md`.
 
 ## Tools
 

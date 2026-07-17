@@ -7,7 +7,7 @@ description: "Execute an approved spec-driven implementation plan phase, update 
 
 ## Resources
 
-Read `shared/agent-runtime.md`, `shared/path-resolution.md`, `shared/vcs-detection.md`, `shared/autonomy.md`, and the relevant language-verification skill.
+Read `shared/agent-runtime.md`, `shared/path-resolution.md`, `shared/vcs-detection.md`, `shared/autonomy.md`, and `shared/language-verification.md` with the matching `shared/language-specs/` reference file.
 
 ## Preconditions
 

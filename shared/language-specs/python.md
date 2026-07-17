@@ -1,9 +1,6 @@
----
-name: python-specifications
-description: "Structural verification for Python — type checker (mypy/pyright), linter (ruff/flake8). Load when planning, implementing, or reviewing Python code (.py; pyproject.toml, setup.cfg, ruff.toml)."
----
-
 # Python — Structural Verification
+
+Apply when planning, implementing, or reviewing code detected by `.py`; `pyproject.toml`, `setup.cfg`, `ruff.toml`. Dispatched via `shared/language-verification.md`.
 
 ## Tools
 

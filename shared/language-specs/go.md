@@ -1,9 +1,6 @@
----
-name: go-specifications
-description: "Structural verification for Go — go vet, -race flag, staticcheck. Load when planning, implementing, or reviewing Go code (.go; go.mod)."
----
-
 # Go — Structural Verification
+
+Apply when planning, implementing, or reviewing code detected by `.go`; `go.mod`. Dispatched via `shared/language-verification.md`.
 
 ## Tools
 
