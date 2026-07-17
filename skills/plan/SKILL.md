@@ -26,7 +26,7 @@ If the existing plan's `status` is `complete` or `archived`, confirm with the us
 
 ### 2. Gather Context (delegated to a collaboration subagent (if available))
 
-Use a collaboration subagent (if available) and ask it to return a **structured** summary, not freeform notes:
+Use a collaboration subagent (if available), rendering `shared/agent-prompts/researcher.md` with the plan topic and resolved paths, and ask it to return a **structured** summary, not freeform notes:
 
 - **Relevant requirements** — spec items under `Specs/` that this plan should cover
 - **Architectural constraints** — design decisions in `Designs/`, component boundaries, interfaces, contracts that constrain implementation
@@ -85,7 +85,7 @@ Shallow tasks with no subtasks or notes are not acceptable output — they're th
 
 ### 5. Review
 
-- Perform an independent plan-review pass to review the complete plan.
+- Render `shared/agent-prompts/plan-reviewer.md` (substitute the plan path and resolved paths) and dispatch it as a collaboration subagent in a fresh context that does not inherit the primary conversation. If collaboration is unavailable, perform the review yourself following that prompt and label it **self-review**.
 - Address any issues raised by the reviewer.
 
 ### 6. Rehearse (optional dry run)
@@ -141,4 +141,4 @@ See `shared/frontmatter-schema.md` for the phase frontmatter schema. Body contai
 - Existing plans: `Plans/` (status in each plan's `README.md` frontmatter)
 - Related specs: `Specs/`
 - Related designs: `Designs/`
-- Agents: a collaboration subagent (if available), an independent plan-review pass, an implementation agent (if available) (rehearsal only)
+- Agent prompts: `shared/agent-prompts/researcher.md`, `shared/agent-prompts/plan-reviewer.md`; an implementation agent (if available) (rehearsal only)

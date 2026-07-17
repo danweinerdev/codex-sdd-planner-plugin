@@ -15,7 +15,7 @@ When you need to define the requirements for a feature before designing or imple
 
 1. **Gather Context**
    - If the user hasn't already specified it, ask what feature to specify
-   - Use a collaboration subagent (if available) to gather context from existing artifacts and codebase
+   - Render `shared/agent-prompts/researcher.md` (substitute the topic, resolved paths, and your questions) and dispatch it as a collaboration subagent (if available); otherwise perform the research pass yourself following that prompt
    - Review any related research or brainstorm documents
 
 2. **Draft Specification**
@@ -26,8 +26,9 @@ When you need to define the requirements for a feature before designing or imple
 
 3. **Review**
    - Set `status: review` when dispatching the reviewer
-   - Perform an independent specification-review pass to review the specification
-   - Address critical and major issues
+   - Render `shared/agent-prompts/spec-reviewer.md` (substitute the spec path and resolved paths) and dispatch it as a collaboration subagent in a fresh context that does not inherit the primary conversation — the reviewer must judge the spec as written, not your intent
+   - If collaboration is unavailable, perform the review pass yourself following that prompt and label the result **self-review** — do not claim independent corroboration
+   - Address critical and major issues; re-dispatch the reviewer after material revisions
 
 4. **Present for Approval**
    - Show the user the review results and final spec
@@ -53,4 +54,4 @@ See `shared/templates/spec.md`:
 - Orchestration: `shared/orchestration.md`
 - Template: `shared/templates/spec.md`
 - Schema: `shared/frontmatter-schema.md`
-- Agents: a collaboration subagent (if available), an independent specification-review pass
+- Agent prompts: `shared/agent-prompts/researcher.md`, `shared/agent-prompts/spec-reviewer.md`

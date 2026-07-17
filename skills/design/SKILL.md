@@ -15,7 +15,7 @@ When you need to define the technical architecture for a component or system bef
 
 1. **Gather Context**
    - If the user hasn't already specified it, ask what component to design
-   - When available, delegate a bounded context scan to a collaboration subagent with the component and its constraints; it scans all artifact directories and the codebase per its own definition.
+   - When available, delegate a bounded context scan to a collaboration subagent: render `shared/agent-prompts/researcher.md` with the component, its constraints, and the resolved paths; otherwise perform the research pass yourself following that prompt.
    - Review any related research documents
 
 2. **Draft Design**
@@ -27,7 +27,7 @@ When you need to define the technical architecture for a component or system bef
 
 3. **Review**
    - Set `status: review` when dispatching the reviewer
-   - Perform an independent plan-review pass to review the design
+   - Render `shared/agent-prompts/plan-reviewer.md` (substitute the design path and resolved paths) and dispatch it as a collaboration subagent in a fresh context that does not inherit the primary conversation; if collaboration is unavailable, perform the review yourself following that prompt and label it **self-review**
    - Address critical and major issues
 
 4. **Present for Approval**
@@ -54,4 +54,4 @@ See `shared/templates/design.md`:
 - Orchestration: `shared/orchestration.md`
 - Template: `shared/templates/design.md`
 - Schema: `shared/frontmatter-schema.md`
-- Agents: a collaboration subagent (if available), an independent plan-review pass
+- Agent prompts: `shared/agent-prompts/researcher.md`, `shared/agent-prompts/plan-reviewer.md`
