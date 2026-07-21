@@ -106,6 +106,24 @@ Shallow tasks with no subtasks or notes are not acceptable output — they're th
 - Then re-read the frontmatter and confirm it parses as YAML and includes `title`, `type`, `status`, `created`, `updated`, `tags`, `related`.
 - **Record decisions**: after approval, record each user-resolved open question and each Key Decision the user actually made (not ones merely drafted for them) in the decision ledger per `shared/decision-log.md` — collision check before each append; a collision stops for the user. Scope entries to `Plans/<PlanName>` (or to the governing spec/design when the decision really lives there), and **cite each new entry's id inline** in the plan's Key Decisions section (e.g., "(D-0012)").
 
+### 8. Hand Off to an Execution Tracker (optional capability hook)
+
+After approval and decision recording are complete, inspect the skills exposed
+by the current runtime. If `sdd-beads-publish` is available, invoke that skill
+for the approved plan path. This is a capability handoff, not a bundled
+dependency: do not search for, install, vendor, or copy the `sdd-beads` plugin,
+and do not issue ad-hoc `bd` commands in place of its workflow.
+
+The handoff applies in both Create and Revise mode so an approved plan revision
+refreshes the existing Beads projection by stable SDD identity. The
+`sdd-beads-publish` skill owns workspace detection and idempotent publication.
+If it reports that Beads is unavailable, uninitialized, conflicted, or failed,
+leave the approved SDD plan unchanged and report the handoff result explicitly;
+never roll back approval and never claim that Beads was synchronized.
+
+If `sdd-beads-publish` is not exposed by the runtime, skip this step silently.
+The Plan skill must remain fully functional as a standalone SDD workflow.
+
 ## Output
 ```
 Plans/<PlanName>/
@@ -117,6 +135,11 @@ Plans/<PlanName>/
 ```
 
 Plan lifecycle (`draft` → `approved` → `active` → `complete`) is tracked in the README frontmatter `status` field. The plan directory stays put.
+
+When the optional `sdd-beads-publish` capability is available, an approved
+plan is also projected into Beads after the SDD artifacts and decision records
+are finalized. That projection is operational coordination state; it does not
+replace this plan as the source of truth.
 
 ## Document Structure
 

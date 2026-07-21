@@ -17,6 +17,7 @@ When you need to understand an unfamiliar codebase or subsystem before planning 
 
 1. **Choose Entry Point**
    - Ask what area of the codebase to explore (or the whole thing)
+   - Read `planning-config.json` to resolve mapped target repository paths
    - Identify starting points:
      - Entry files (`main.py`, `index.ts`, `cmd/`, `src/main/`)
      - Configuration files (understand what's configurable)
@@ -85,3 +86,4 @@ Research/<codebase-or-subsystem-slug>.md
 - Template: `shared/templates/research.md`
 - Schema: `shared/frontmatter-schema.md`
 - Agent: a collaboration subagent (if available)
+- Target repository mappings and paths: `planning-config.json`

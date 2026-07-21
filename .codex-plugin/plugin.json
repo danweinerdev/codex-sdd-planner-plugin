@@ -1,6 +1,6 @@
 {
   "name": "codex-sdd-planner",
-  "version": "1.10.0",
+  "version": "1.10.1",
   "description": "Spec-driven development planning skills for requirements, designs, implementation plans, execution, review, and retrospectives.",
   "author": {
     "name": "Daniel Weiner"

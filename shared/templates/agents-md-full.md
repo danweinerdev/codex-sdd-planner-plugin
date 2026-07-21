@@ -25,7 +25,7 @@ This repository keeps spec-driven development artifacts under `{{PLANNING_ROOT}}
 - Artifact metadata lives in YAML frontmatter. Status values are the source of truth.
 - Plans stay under `Plans/<PlanName>/`; never move them to express lifecycle state.
 - A phase owns task status and subtask checkboxes. Update them only after actual verification.
-- Use `planning-config.json` to resolve the planning root.
+- Use `planning-config.json` to resolve the planning root and any externally targeted repository paths. There is no local companion config.
 - Consult the plugin's frontmatter schema, templates, and language-verification references when creating or changing artifacts.
 
 ## Lifecycle
