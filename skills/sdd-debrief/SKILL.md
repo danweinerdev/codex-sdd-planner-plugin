@@ -6,7 +6,7 @@ description: "Write after-action notes for a completed plan phase. debrief phase
 # After-Action Phase Notes
 
 ## Path Resolution
-Before opening `shared/...`, follow symlinks in this loaded file's path, then derive `<plugin-root>` from `<plugin-root>/skills/<name>/SKILL.md`; fallback search roots are repository/user `.agents/` (including `$HOME/.agents/plugins/*/`), Codex `${CODEX_HOME:-$HOME/.codex}/plugins/cache/*/*/*/`, and runtime-configured skill roots. Accept only a root containing this skill, `shared/agent-runtime.md`, and the matching plugin manifest; never use the working directory. Then read `<plugin-root>/shared/agent-runtime.md` and `<plugin-root>/shared/path-resolution.md`.
+Before opening `shared/...`, follow symlinks in this loaded file's path, then derive `<plugin-root>` from `<plugin-root>/skills/<name>/SKILL.md`; fallback search roots are repository/user `.agents/` (including `$HOME/.agents/plugins/*/`), Codex `${CODEX_HOME:-$HOME/.codex}/plugins/cache/*/*/*/`, and runtime-configured skill roots. Accept only a root containing this skill, `shared/agent-runtime.md`, and the matching plugin manifest; never use the working directory. Then read `<plugin-root>/shared/agent-runtime.md`, `<plugin-root>/shared/path-resolution.md`, and `<plugin-root>/shared/completion-evidence.md`.
 
 **Resource boundary:** Read the plugin, all `SKILL.md` files, and `shared/` resources in place. Never copy or symlink them into the working directory, target repository, or planning root. Only generated SDD outputs may be materialized from bundled resources.
 
@@ -23,6 +23,8 @@ When a plan phase has been completed (or substantially completed) and you want t
 
 2. **Gather Information**
    - Review the phase's tasks and subtasks for completion status
+   - Read every task's `### Completion Evidence`; an absent or pending section
+     on a complete task is a legacy evidence gap, not proof
    - Read related designs from `Designs/` to identify deviations from intended architecture
    - Read related specs from `Specs/` to assess requirements coverage
    - If more than ~3 related documents are involved, delegate the sweep to a collaboration subagent (if available) instead of reading them all yourself
@@ -53,11 +55,29 @@ When a plan phase has been completed (or substantially completed) and you want t
    - For each item in Decisions Made that the user confirmed (step 2) and that isn't already in `Decisions/decisions.md`, append an entry per `shared/decision-log.md` — collision check first; a collision stops for the user. Scope entries to the plan. This is the safety net for decisions made mid-implementation that escaped capture.
 
 6. **Update Phase Status**
-   - Set the phase status to `complete` in both:
+   - Require every task to be `complete`, every task completion-evidence
+     section to conform to `shared/completion-evidence.md`, and every phase
+     acceptance criterion to be checked. Stop without changing phase status if
+     any requirement is missing.
+   - Populate `## Phase Completion Evidence` with the verification date,
+     canonical source identity, exact exclusions and identity recheck, a
+     verbatim rollup of each task's evidence, and exact
+     aggregate commands/tools and results. If no additional
+     phase-level check applies, state why task evidence covers every phase
+     acceptance criterion.
+   - Re-read that section, require every required aggregate check to have
+     passed, and only then set the phase status to `complete` in both:
      - The phase doc frontmatter
      - The plan README's `phases[]` array
    - Update `updated` dates
-   - If this was the final phase and all phases are now complete, set the plan README frontmatter `status` to `complete`
+   - If this was the final phase and all phases are now complete, populate
+     `## Plan Completion Evidence` under the same rules. Repeat the exact
+     task- and phase-level commands/tools, context, results, and observable
+     evidence in a complete rollup (links alone are insufficient), record the
+     canonical source identity, exact exclusions and identity recheck, then
+     record required
+     plan-level checks. Re-read it, require every final check to have passed,
+     and only then set the plan README frontmatter `status` to `complete`.
 
 ## Output
 ```

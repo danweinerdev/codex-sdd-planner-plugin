@@ -20,7 +20,7 @@ If an input is missing or names a path that does not exist, report the mismatch 
    - `Specs/` — existing specifications
    - `Designs/` — existing architecture documents
    - `Plans/` — related or dependent plans (filter by each plan's frontmatter `status`; skip plans with status `complete` or `archived` unless explicitly asked)
-   - `Retro/` — lessons learned that may apply
+   - `Plans/*/notes/` — phase debriefs and lessons learned that may apply
    - The decision ledger — `Decisions/decisions.md` under the planning root, or `<repo-root>/DECISIONS.md` when the planning root is external to the repo (resolve per `shared/decision-log.md` § Ledger location). Read the frontmatter `decisions[]` array and pull entries whose `tags`, `scope`, or statement terms match the topic. `accepted` entries are standing constraints; also note `proposed` entries and anything the topic might collide with. When checking rejected alternatives, grep `Decisions/archive-*.md` too — archived `rejected` entries are still negative truths
 
 2. **Search the codebase** in the target repository:

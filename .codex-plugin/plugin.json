@@ -1,7 +1,7 @@
 {
   "name": "codex-sdd-planner",
-  "version": "2.0.0",
-  "description": "Spec-driven development planning skills for requirements, designs, implementation plans, execution, review, and retrospectives.",
+  "version": "3.0.0",
+  "description": "Spec-driven development planning skills for research, requirements, designs, implementation plans, execution, review, debriefs, and validation.",
   "author": {
     "name": "Daniel Weiner"
   },
@@ -12,7 +12,7 @@
   "interface": {
     "displayName": "SDD Planner",
     "shortDescription": "Spec-driven development lifecycle skills",
-    "longDescription": "Create and maintain research, specifications, designs, implementation plans, reviews, and retrospectives as structured Markdown artifacts.",
+    "longDescription": "Create and maintain research, specifications, designs, implementation plans, reviews, debriefs, and completion evidence as structured Markdown artifacts.",
     "developerName": "Daniel Weiner",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],

@@ -14,7 +14,7 @@ The primary agent owns user communication, approvals, scope decisions, and final
 
 Multi-agent behavior is expressed as bundled, runtime-neutral role prompts that any skill can render and dispatch when collaboration subagents are available:
 
-- `shared/agent-prompts/researcher.md` — context gathering across artifacts, codebase, and docs. Used by `sdd-specify`, `sdd-design`, and `sdd-plan`; any skill that delegates a context scan (`sdd-brainstorm`, `sdd-research`, `sdd-excavate`, `sdd-tend`, `sdd-debrief`) may render it instead of writing an ad-hoc scan prompt.
+- `shared/agent-prompts/researcher.md` — context gathering across artifacts, codebase, and docs. Used by `sdd-specify`, `sdd-design`, and `sdd-plan`; `sdd-brainstorm`, `sdd-research`, and `sdd-debrief` may render it instead of writing an ad-hoc scan prompt.
 - `shared/agent-prompts/spec-reviewer.md` — independent specification review (testability, completeness, ambiguity, scope, gated work) with an Approve/Revise verdict.
 - `shared/agent-prompts/plan-reviewer.md` — independent plan/design review (completeness, feasibility, conventions, gaps, gated work) with an Approve/Revise verdict.
 - `shared/review-prompts/` — the four code-review lanes (see `shared/review-lanes.md`).

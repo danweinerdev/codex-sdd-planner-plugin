@@ -2,7 +2,9 @@
 
 ## Planning root
 
-Artifacts (`Research/`, `Brainstorm/`, `Specs/`, `Designs/`, `Plans/`, `Retro/`, `Diagrams/`) are read from and written to the planning root.
+Core artifacts (`Research/`, `Brainstorm/`, `Specs/`, `Designs/`, `Plans/`, and
+`Decisions/`) are read from and written to the planning root. Existing legacy
+artifact directories remain readable but are not created by the compact core.
 
 1. Find `planning-config.json` in the current directory or its parents through the repository root.
 2. If no config exists, use the repository root and treat `planningRoot` as `"."`.

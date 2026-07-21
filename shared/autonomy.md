@@ -7,7 +7,7 @@ Cross-skill view of what runs autonomously versus what stops for the user. Each 
 | Work | Notes |
 |---|---|
 | Reads, searches, agent dispatch | Including parallel waves and resumes |
-| Artifact writes that follow templates and scripted status transitions | `sdd-plan` writing `draft`, `sdd-implement` flipping task statuses, etc. |
+| Artifact writes that follow templates and evidence-gated status transitions | `sdd-plan` writing `draft`; `sdd-implement` recording completion evidence before flipping task status, etc. |
 | Wave-to-wave progression in `sdd-implement` | Unless unresolved critical findings are pending end-of-wave escalation |
 | Retries within budget | One resume with clarified guidance after a failure (2 attempts total) |
 | Non-critical review findings | Collected and presented at end of wave, work continues |
@@ -18,6 +18,7 @@ Cross-skill view of what runs autonomously versus what stops for the user. Each 
 |---|---|
 | Destructive actions — deleting data, prod config, shared systems | `sdd-implement` escalation rules; `code-implementer` |
 | Approval transitions — spec/design/plan `approved` | `sdd-specify`, `sdd-design`, `sdd-plan`; explicit user sign-off only |
+| Completion without durable evidence | `shared/completion-evidence.md` — task, phase, and plan stay non-complete |
 | Gated scope — in-scope work depends on an unanswered external question | `sdd-plan`, `sdd-specify`, `sdd-design`; reviewers flag as Critical |
 | Plan-vs-reality mismatch — the plan describes a codebase that doesn't exist as written | `code-implementer` STOPs; `sdd-implement` surfaces, never patches around it |
 | Spec amendment — a contract test can only pass by weakening the assertion | `code-implementer` STOPs; `spec-compliance` flags as Critical |

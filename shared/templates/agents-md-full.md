@@ -16,8 +16,7 @@ This repository keeps spec-driven development artifacts under `{{PLANNING_ROOT}}
 ├── Plans/<PlanName>/README.md
 ├── Plans/<PlanName>/<NN>-<Phase>.md
 ├── Plans/<PlanName>/notes/<phase>.md
-├── Retro/YYYY-MM-DD-<slug>.md
-└── Diagrams/<slug>.md
+└── Decisions/decisions.md
 ```
 
 ## Conventions
@@ -25,14 +24,17 @@ This repository keeps spec-driven development artifacts under `{{PLANNING_ROOT}}
 - Artifact metadata lives in YAML frontmatter. Status values are the source of truth.
 - Plans stay under `Plans/<PlanName>/`; never move them to express lifecycle state.
 - A phase owns task status and subtask checkboxes. Update them only after actual verification.
+- Every task, phase, and plan has a completion-evidence section. Record exact
+  commands/tools, context, revision, result, and observable evidence before any
+  `complete` transition; prospective verification criteria are not proof.
 - Use `planning-config.json` to resolve the planning root and any externally targeted repository paths. There is no local companion config.
 - Consult the plugin's frontmatter schema, templates, and language-verification references when creating or changing artifacts.
 
 ## Lifecycle
 
-Use these skills as needed: `sdd-setup`, `sdd-research`, `sdd-brainstorm`, `sdd-specify`, `sdd-design`, `sdd-plan`, `sdd-implement`, `sdd-code-review`, `sdd-simplify`, `sdd-debrief`, `sdd-retro`, `sdd-poke-holes`, `sdd-tend`, `sdd-diagram`, and `sdd-excavate`.
+Use these skills as needed: `sdd-setup`, `sdd-research`, `sdd-brainstorm`, `sdd-specify`, `sdd-design`, `sdd-plan`, `sdd-implement`, `sdd-code-review`, `sdd-poke-holes`, `sdd-debrief`, `sdd-decide`, `sdd-decision-log`, and `sdd-validate`.
 
-The normal progression is: `sdd-setup` -> `sdd-research` -> `sdd-brainstorm` -> `sdd-specify` -> `sdd-design` -> `sdd-plan` -> `sdd-implement` -> `sdd-code-review` -> `sdd-simplify` -> `sdd-debrief` -> `sdd-retro`. It is valid to enter at any point when the corresponding artifacts already exist.
+The normal progression is: `sdd-setup` -> `sdd-research` -> `sdd-brainstorm` -> `sdd-specify` -> `sdd-design` -> `sdd-plan` -> `sdd-implement` -> `sdd-code-review` -> `sdd-debrief`. Use `sdd-validate` at lifecycle boundaries. It is valid to enter at any point when the corresponding artifacts already exist.
 
 ## Review And Execution
 

@@ -6,7 +6,7 @@ description: "Create or expand a structured implementation plan with phases, tas
 # Create or Expand an Implementation Plan
 
 ## Path Resolution
-Before opening `shared/...`, follow symlinks in this loaded file's path, then derive `<plugin-root>` from `<plugin-root>/skills/<name>/SKILL.md`; fallback search roots are repository/user `.agents/` (including `$HOME/.agents/plugins/*/`), Codex `${CODEX_HOME:-$HOME/.codex}/plugins/cache/*/*/*/`, and runtime-configured skill roots. Accept only a root containing this skill, `shared/agent-runtime.md`, and the matching plugin manifest; never use the working directory. Then read `<plugin-root>/shared/agent-runtime.md` and `<plugin-root>/shared/path-resolution.md`.
+Before opening `shared/...`, follow symlinks in this loaded file's path, then derive `<plugin-root>` from `<plugin-root>/skills/<name>/SKILL.md`; fallback search roots are repository/user `.agents/` (including `$HOME/.agents/plugins/*/`), Codex `${CODEX_HOME:-$HOME/.codex}/plugins/cache/*/*/*/`, and runtime-configured skill roots. Accept only a root containing this skill, `shared/agent-runtime.md`, and the matching plugin manifest; never use the working directory. Then read `<plugin-root>/shared/agent-runtime.md`, `<plugin-root>/shared/path-resolution.md`, and `<plugin-root>/shared/completion-evidence.md`.
 
 **Resource boundary:** Read the plugin, all `SKILL.md` files, and `shared/` resources in place. Never copy or symlink them into the working directory, target repository, or planning root. Only generated SDD outputs may be materialized from bundled resources.
 
@@ -55,6 +55,9 @@ Use this structured summary as the input to step 3 — every drafting decision s
 
 **Both modes:**
 - **Every task must have a `verification` field** — a specific answer to "how do we know this work is good and complete?" that names specific behaviors to cover (e.g., "parser handles valid, malformed, and empty input", "endpoint returns 200 with valid payload and 400 with missing fields"). Vague criteria like "works correctly" or test counts are not acceptable — verification means each new or changed behavior has a corresponding check. Wherever the check is commandable, `verification` also names the exact command to run and the expected observable output (e.g., `cargo test auth::` — 14 tests pass, including the new refresh-expiry case), not just prose criteria. Prose-only criteria are acceptable only when no command can observe the behavior. "Works correctly" is never acceptable. In Revise mode, audit existing tasks and add `verification` to any that lack it. Where a task satisfies a spec acceptance criterion or requirement, its `verification` (or body section) cites the `AC-NN`/`FR-NN` id (`shared/frontmatter-schema.md` § Stable Identifiers) — phase-level Acceptance Criteria likewise cite the spec ids they roll up.
+- **Prospective criteria are not retrospective evidence.** Every task section,
+  phase document, and plan README carries the completion-evidence section from
+  `shared/completion-evidence.md`, initialized to `Pending — not complete.`
 - **Include structural verification:** Read `shared/language-verification.md` and detect the target project language. Include the language-appropriate structural checks (sanitizers, static analysis, type checking) in verification fields where relevant — either per-task or as a dedicated verification task in each phase.
 - **Gated scope.** A task whose correctness depends on an unanswered question only an external party can answer (the user, a stakeholder, a vendor, another team) must NOT be created provisionally. A "⚠️ pending confirmation" note is not a gate — a model will implement past it. Instead: either cut the work from scope, or create the phase with `status: blocked` naming the open question in the phase doc, and record the question in the plan README's Open Questions. A plan cannot move to `approved` while any in-scope task is gated on an unanswered external question.
 - Present the structure (phases, tasks, refinements) to the user for feedback before writing files.
@@ -69,6 +72,10 @@ Use this structured summary as the input to step 3 — every drafting decision s
 
 **Revise mode:**
 - Update the existing README and phase doc frontmatter (`updated` date, new phase/task entries, refined `verification`).
+- Add missing completion-evidence sections to every non-complete task, phase,
+  and plan in scope. For already-complete artifacts with missing or pending
+  evidence, report a legacy evidence gap; never fabricate evidence or silently
+  downgrade the status.
 - Create new phase files only when new phases are introduced.
 - Leave existing `notes/` debriefs untouched.
 
@@ -77,11 +84,15 @@ Use this structured summary as the input to step 3 — every drafting decision s
 For each task, write a `## <ID>: Task Title` section that includes:
 - **`### Subtasks`** — a checklist (`- [ ]`) of the concrete implementation steps the implementer will work through. Not "implement X" — the actual steps a person would tick off (e.g., "add migration", "wire the handler", "cover the empty-input case in tests").
 - **`### Notes`** — implementation guidance, edge cases, references to specific design sections, gotchas the researcher surfaced. If a task can't be broken into subtasks because it depends on research the implementer will do, say that explicitly here — don't leave the section blank.
+- **`### Completion Evidence`** — required, initially exactly
+  `Pending — not complete.`; `sdd-implement` replaces it with what actually ran
+  before changing task status to `complete`.
 - **`### Trap` (optional)** — for any task with a known tempting-but-wrong shortcut, name the shortcut and why it's wrong (e.g., "You will want to mock the clock here — don't; the race being tested lives in the real timer path."). Traps are written for a hasty model reading the task in isolation. Don't invent traps for tasks that have none.
 
 Plus:
 - Phase-level **Acceptance Criteria** as a checklist.
-- Plan README sections: **Overview**, **Architecture** (with Mermaid diagrams where structure helps — prefer `graph TD` / `flowchart LR` over ASCII art), **Key Decisions**, **Dependencies**, and **Open Questions** (only when gated scope produced any — see step 3).
+- Phase-level **Phase Completion Evidence**, initially pending.
+- Plan README sections: **Overview**, **Architecture** (with Mermaid diagrams where structure helps — prefer `graph TD` / `flowchart LR` over ASCII art), **Key Decisions**, **Dependencies**, **Plan Completion Evidence** (initially pending), and **Open Questions** (only when gated scope produced any — see step 3).
 
 Shallow tasks with no subtasks or notes are not acceptable output — they're the failure mode this skill exists to prevent.
 
@@ -150,6 +161,8 @@ See `shared/frontmatter-schema.md` for the plan frontmatter schema. Body contain
 - **Key Decisions**: Major choices and rationale
 - **Dependencies**: External prerequisites
 - **Open Questions**: Unanswered external questions gating `blocked` phases (omit when there are none)
+- **Plan Completion Evidence**: Pending until every phase is complete; then the
+  exact aggregate evidence required by `shared/completion-evidence.md`
 
 ### Phase Docs
 See `shared/frontmatter-schema.md` for the phase frontmatter schema. Body contains:
@@ -157,8 +170,10 @@ See `shared/frontmatter-schema.md` for the phase frontmatter schema. Body contai
 - **Task sections**: Each headed by task ID (e.g., `## 1.1: Task Title`) with:
   - `### Subtasks` — checklist of concrete implementation steps
   - `### Notes` — implementation guidance, edge cases, design references
+  - `### Completion Evidence` — pending until populated with exact retrospective evidence
   - `### Trap` — optional; the known tempting-but-wrong shortcut for this task and why it's wrong (omit when a task has none)
 - **Acceptance Criteria**: Phase-level completion criteria as a checklist
+- **Phase Completion Evidence**: Pending until every task and phase criterion is complete
 
 ## Context
 - Orchestration: `shared/orchestration.md`

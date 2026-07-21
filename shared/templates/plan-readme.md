@@ -23,6 +23,10 @@ Major choices made and their rationale.
 ## Dependencies
 External dependencies, prerequisites, and assumptions.
 
+## Plan Completion Evidence
+
+Pending — not complete.
+
 <!-- Optional — include only when questions are open; a plan cannot be
      approved while an in-scope question is unanswered:
 ## Open Questions

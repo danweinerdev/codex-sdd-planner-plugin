@@ -38,6 +38,10 @@ Use the tools your runtime provides when they sharpen the review:
 - Are acceptance criteria defined for each phase?
 - Are deliverables clearly stated?
 - Is the frontmatter complete and valid?
+- Does every task, phase, and plan contain its required completion-evidence
+  section from `shared/completion-evidence.md`? For planned work the section
+  must be pending; any already-complete entity must contain exact retrospective
+  evidence rather than criteria or checked boxes.
 
 ### 2. Feasibility
 - Can the tasks be implemented as described?
@@ -61,6 +65,14 @@ Use the tools your runtime provides when they sharpen the review:
 Hunt for work that depends on an unanswered external question — anything hedged with "assuming X", "pending confirmation", "TBD with vendor/stakeholder", or an acceptance criterion that can't be evaluated until someone answers something. A pending-confirmation flag is not a gate: a model will implement straight past it. Any in-scope task/requirement gated on an open external question is a **Critical** finding and forces a **Revise** verdict — the fix is to resolve the question, cut the work from scope, or mark the affected phase `blocked` naming the question.
 
 Also check task `verification` fields: where the check is commandable, verification should name the exact command and expected observable output; flag prose-only verification on commandable work as Major.
+
+Prospective `verification` and retrospective completion evidence are distinct.
+Flag a plan that treats its criteria as proof, omits required pending evidence
+sections, or marks an entity complete without the exact commands/tools,
+context, observed results, canonical source identity, permitted exact
+exclusions, durable dirty capture when applicable, and immediate identity
+recheck required by
+`shared/completion-evidence.md`.
 
 ## Output Format
 

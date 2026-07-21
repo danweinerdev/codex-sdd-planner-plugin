@@ -51,6 +51,28 @@ decisions:
     confirmation: "Every skills/* directory and SKILL.md name starts with sdd-, and installed ~/.agents/skills links expose no legacy short-form sdd-planner names."
     scope: [skills, README.md]
     tags: [skill-names, namespace, installation]
+  - id: D-0005
+    kind: decision
+    status: accepted
+    date: 2026-07-21
+    decided_by: user
+    statement: "An SDD task, phase, or plan may not be marked complete until its artifact contains a populated completion-evidence section recording exactly what commands, tests, tools, or inspections ran and the observed results."
+    rejected: ["Treat prospective verification criteria or checked subtasks as proof of completion", "Keep completion evidence only in conversation"]
+    rationale: "Durable retrospective evidence makes completion auditable and gives execution trackers a concrete basis for closure instead of trusting status alone."
+    confirmation: "shared/completion-evidence.md defines the required sections; lifecycle skills write and validate them before complete transitions; sdd-validate rejects missing, pending, stale, or failing evidence on complete entities."
+    scope: [README.md, shared/completion-evidence.md, shared/frontmatter-schema.md, shared/templates/plan-readme.md, shared/templates/plan-phase.md, shared/agent-prompts/plan-reviewer.md, skills/sdd-plan, skills/sdd-implement, skills/sdd-debrief, skills/sdd-validate, skills/sdd-code-review]
+    tags: [completion, verification, evidence, lifecycle]
+  - id: D-0006
+    kind: decision
+    status: accepted
+    date: 2026-07-21
+    decided_by: user
+    statement: "The sdd-planner public surface is a compact lifecycle core: diagram, excavate, retro, and simplify are removed; excavation becomes a research mode; broad tend is replaced by read-only deterministic sdd-validate."
+    rejected: ["Keep all peripheral workflow skills in the core plugin", "Remove artifact validation together with tend"]
+    rationale: "A smaller public surface reduces overlap and selection ambiguity while preserving the integrity checks required for status, evidence, dependency, identifier, and decision correctness."
+    confirmation: "The manifest skills directory exposes exactly the documented core; removed skill paths and symlinks are absent; sdd-validate is read-only and runs the deterministic integrity checks."
+    scope: [README.md, .codex-plugin/plugin.json, skills, shared/frontmatter-schema.md, shared/path-resolution.md, shared/templates/agents-md-full.md]
+    tags: [skill-surface, compact-core, validation]
 ---
 
 # Decision Ledger

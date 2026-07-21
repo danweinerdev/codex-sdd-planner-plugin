@@ -44,7 +44,7 @@ decisions:
 | `rationale` | yes | one or two sentences; deeper deliberation goes in a body section |
 | `question` | for `answered-question` | verbatim or near-verbatim, so the same question is findable later |
 | `rejected`, `scope`, `tags` | recommended | these three power collision detection and scoped lookups |
-| `confirmation` | recommended | how a reviewer or the `sdd-tend` skill checks the decision is still being honored — reviewers run or apply it when auditing coverage |
+| `confirmation` | recommended | how a reviewer or the `sdd-validate` skill checks the decision is still being honored — reviewers run or apply it when auditing coverage |
 | `supersedes`, `superseded_by`, `reversibility` | situational | supersession links are bidirectional — always write both |
 
 ### Lifecycle Rules (append-only)
@@ -74,8 +74,8 @@ Rules of capture:
 - **Making the decision is the user's; writing the entry is autonomous** (it's a template-following artifact write per `shared/autonomy.md`). Draft the entry, show it in-flow (a short block, not a modal ceremony), and append. `decided_by: user` requires the user actually stated the choice; an agent inference the user merely didn't object to is `proposed`, not `accepted`.
 - **Record decisions, not events.** "We chose PostgreSQL over DynamoDB for X" is an entry; "phase 2 completed" is not. Test: would a future session act differently for knowing this?
 - **Don't double-log.** Prose sections (Key Decisions, Design Decisions, Decisions Made) still exist for narrative; the ledger entry is the machine-readable pointer of record. Cross-reference the artifact in `scope` rather than duplicating its full deliberation.
-- **Cite ids in governed artifacts (bidirectional linking).** When an artifact section is governed by a ledger entry, cite the id inline — e.g., `## Key Decisions` … `Use JWT for session tokens (D-0010)`. The entry points at the artifact via `scope`; the artifact points back via the citation. The supersession cascade and the `sdd-tend` skill's stale-citation check grep for these ids — without citations they are blind.
-- **Capture guarantee, stated honestly.** Capture at the structured moments (approval gates, escalations, debrief backfill) is reliable — it's written into the skills. Ad-hoc conversational capture depends on the runtime loading the `sdd-decision-log` capture skill from its description, which is best-effort; the `sdd-decide` skill is the manual recovery path and the `sdd-tend` skill's `decisions` mode the periodic net. Do not present conversational capture as guaranteed.
+- **Cite ids in governed artifacts (bidirectional linking).** When an artifact section is governed by a ledger entry, cite the id inline — e.g., `## Key Decisions` … `Use JWT for session tokens (D-0010)`. The entry points at the artifact via `scope`; the artifact points back via the citation. The supersession cascade and `sdd-validate` stale-citation check grep for these ids — without citations they are blind.
+- **Capture guarantee, stated honestly.** Capture at the structured moments (approval gates, escalations, debrief backfill) is reliable — it's written into the skills. Ad-hoc conversational capture depends on the runtime loading the `sdd-decision-log` capture skill from its description, which is best-effort; the `sdd-decide` skill is the manual recovery path and `sdd-validate` is the periodic consistency net. Do not present conversational capture as guaranteed.
 
 ## Collision Detection — before every append
 
@@ -95,7 +95,7 @@ Run this check before appending any new entry E. Cheapest layer first; later lay
    - **Both hold** — the user declares the scopes disjoint: narrow both entries' `scope` explicitly so the collision is structurally resolved, and append E
    - Never resolve silently, never pick a winner by recency, and treat a collision with a `reversibility: one-way` entry as high-stakes — say so explicitly.
    - **One-step supersession for fresh instructions:** when E comes from an explicit user statement made moments ago (an escalation answer, a direct instruction), don't reopen the decision — present the collision as a single confirmation: "This supersedes D-NNNN (*old statement*) — confirm?" One yes resolves it; anything less than yes falls back to the full menu above.
-5. **Supersession cascade:** after a supersession, grep artifacts (`Specs/`, `Designs/`, `Plans/`) for the superseded entry's id — this is why the citation convention above is load-bearing — plus the entry's `scope` artifacts regardless of citation. Report any hits to the user as possibly-stale artifacts (a Tend-skill `decisions`-mode concern thereafter) — don't rewrite them unasked.
+5. **Supersession cascade:** after a supersession, grep artifacts (`Specs/`, `Designs/`, `Plans/`) for the superseded entry's id — this is why the citation convention above is load-bearing — plus the entry's `scope` artifacts regardless of citation. Report any hits to the user as possibly-stale artifacts; `sdd-validate` continues to report stale citations thereafter. Don't rewrite them unasked.
 
 ## Consultation — how the ledger is read
 
@@ -110,10 +110,17 @@ The ledger is **intent context**. It goes to: the primary context, `researcher`,
 
 ## Concurrency and Merge Conflicts (known limitation)
 
-Sequential ids and a single ledger file assume **one writer at a time**. Two concurrent sessions or two branches can each mint the same `D-NNNN` and will conflict on merge (a YAML array is merge-hostile). This is accepted for the common solo-planner case; teams should expect occasional conflicts. Repair is a Tend-skill `decisions`-mode job: on duplicate ids, keep the earlier entry's id, renumber the later one to the next free id, and chase every incoming `supersedes`/`superseded_by` link and artifact citation of the renumbered id. Never resolve a duplicate by deleting either entry.
+Sequential ids and a single ledger file assume **one writer at a time**. Two concurrent sessions or two branches can each mint the same `D-NNNN` and will conflict on merge (a YAML array is merge-hostile). This is accepted for the common solo-planner case; teams should expect occasional conflicts. `sdd-validate` reports duplicate ids but does not repair them. On a user-authorized repair, keep the earlier entry's id, renumber the later one to the next free id, and chase every incoming `supersedes`/`superseded_by` link and artifact citation of the renumbered id. Never resolve a duplicate by deleting either entry.
 
 ## Hygiene
 
-The `sdd-tend` skill's `decisions` mode checks: collisions among `accepted` entries using the scope-overlap definition above (the append-time check can miss pairs that predate it), superseded entries still cited by live artifacts (grep for ids), `scope` references to artifacts that no longer exist, prose decision sections never promoted to the ledger, `proposed` entries older than 30 days, `assumption` entries whose `refresh_when` triggers have fired (an invalidated assumption is reconciled like a collision), duplicate-id repair (above), and malformed entries (missing required fields, broken supersession links).
+The `sdd-validate` skill checks deterministic collisions among `accepted`
+entries, superseded entries still cited by live artifacts, dangling scopes,
+duplicate ids, malformed entries, and broken supersession links. It reports but
+never repairs or resolves them.
 
-**Rotation:** when the ledger grows past ~100 entries, the `sdd-tend` skill's `decisions` mode offers to move `superseded` and `rejected` entries to `Decisions/archive-<YYYY>.md` (type `decision-log`, status `archived`). Ids stay unique across live ledger and archives. `accepted` and `proposed` entries never rotate. The collision candidate filter greps `Decisions/archive-*.md` too — archived `rejected` entries are still negative truths; only session onboarding is limited to the live ledger.
+**Rotation:** ledger rotation is outside the compact core. If maintainers archive
+entries manually, use `Decisions/archive-<YYYY>.md` (type `decision-log`, status
+`archived`), keep ids unique across live and archived ledgers, and never rotate
+`accepted` or `proposed` entries. Collision checks still include archived
+`rejected` entries.

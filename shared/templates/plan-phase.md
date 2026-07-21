@@ -28,6 +28,10 @@ Brief description of what this phase delivers.
 
 ### Notes
 
+### Completion Evidence
+
+Pending — not complete.
+
 <!-- Optional per task — include only when the task has a known tempting-but-wrong shortcut:
 ### Trap
 {{THE_SHORTCUT_A_HASTY_MODEL_WOULD_TAKE_AND_WHY_IT_IS_WRONG}}
@@ -35,3 +39,7 @@ Brief description of what this phase delivers.
 
 ## Acceptance Criteria
 - [ ]
+
+## Phase Completion Evidence
+
+Pending — not complete.
