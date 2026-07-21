@@ -22,6 +22,11 @@ The compact core exposes: `sdd-setup`, `sdd-research`, `sdd-brainstorm`,
 `sdd-validate` (D-0006). Codebase excavation is a mode of `sdd-research`;
 diagramming, retrospectives, and generic simplification are outside the core.
 
+`sdd-validate` runs `scripts/sdd_validate.py` for deterministic artifact
+integrity checks before applying model judgment to semantic sufficiency. The
+script requires PyYAML as declared in `requirements.txt` and supports text or
+JSON diagnostics suitable for local use and CI.
+
 After plan approval, the `sdd-plan` skill conditionally hands the approved artifact to
 the independently installed `sdd-beads-publish` skill when that skill is
 available. The integration is capability-detected: `sdd-planner` has no hard

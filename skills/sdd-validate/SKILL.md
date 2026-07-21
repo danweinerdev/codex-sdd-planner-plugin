@@ -21,6 +21,29 @@ the matching plugin manifest; never use the working directory. Then read
 `<plugin-root>/shared/decision-log.md`, and
 `<plugin-root>/shared/review-artifacts.md`.
 
+Before analyzing artifacts in model context, run the bundled deterministic
+validator from the target repository root:
+
+```bash
+python3 <plugin-root>/scripts/sdd_validate.py --format json
+```
+
+Pass `--scope <planning-root-relative-path-or-artifact-name>` when the user
+named a narrower scope. PyYAML is a declared plugin dependency in
+`<plugin-root>/requirements.txt`; if it is unavailable, report the validator's
+dependency error and stop rather than silently replacing deterministic checks
+with model judgment. Exit `0` means scripted checks passed, exit `1` means the
+JSON diagnostics are authoritative findings, and exit `2` means validation
+could not run. Never execute artifact-recorded evidence commands as part of
+validation.
+
+Identity mode defaults to `auto`, which performs current target-worktree and
+governing-projection checks for every populated evidence section. Use the
+equivalent explicit `--identity-mode current` immediately before a completion
+transition or tracker closure. Use `--identity-mode historical` only for a
+confirmed historical audit where later legitimate work makes current-source
+comparison inappropriate.
+
 **Read-only guarantee:** validation never edits, moves, creates, or deletes
 artifacts and never changes status. Report exact findings for a lifecycle skill
 or user-authorized repair to address.
@@ -32,6 +55,35 @@ artifacts under the resolved planning root. Read complete plan README and phase
 documents when validating any plan lifecycle state.
 
 ## Checks
+
+The script owns machine-decidable structure, schema, path, identifier, graph,
+review-state, decision-link, durable-digest, and evidence-shape checks below.
+Do not repeat those checks manually or reinterpret a scripted failure. After it
+runs, use model analysis only for semantic sufficiency: whether prose has real
+content, evidence proves the cited behavior and acceptance criteria, aggregate
+evidence covers the deliverable, and differently worded decisions potentially
+conflict. Merge those semantic findings with the script diagnostics in the
+required output format.
+
+For every scoped spec, design, or plan, resolve its explicit `related` graph and
+perform a cross-artifact semantic reconciliation after the script passes its
+citation matrix checks:
+
+- Compare each `FR-NN`, `NFR-NN`, constraint, and accepted decision in the spec
+  with the linked design. Report omitted behavior, incompatible contracts, and
+  design choices that exceed or narrow approved scope.
+- Compare the linked design with plan phases, task boundaries, dependencies,
+  traps, and verification. Report architecture with no implementation task,
+  tasks that contradict the design, and verification that cannot prove the
+  governing `AC-NN` behavior.
+- Compare the plan directly back to the spec so a shared design omission cannot
+  make both downstream artifacts appear mutually consistent.
+- Actively test the unhappy paths named by the governing artifacts: null/empty
+  boundaries, ownership and cleanup, errors, concurrency, retries/timeouts, and
+  cross-tenant or security boundaries where applicable.
+
+The script proves citation presence, not semantic conformance. Never report the
+artifacts reconciled merely because every identifier appears somewhere.
 
 ### Structure and frontmatter
 

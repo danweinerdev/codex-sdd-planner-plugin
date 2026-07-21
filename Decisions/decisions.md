@@ -73,6 +73,17 @@ decisions:
     confirmation: "The manifest skills directory exposes exactly the documented core; removed skill paths and symlinks are absent; sdd-validate is read-only and runs the deterministic integrity checks."
     scope: [README.md, .codex-plugin/plugin.json, skills, shared/frontmatter-schema.md, shared/path-resolution.md, shared/templates/agents-md-full.md]
     tags: [skill-surface, compact-core, validation]
+  - id: D-0007
+    kind: decision
+    status: accepted
+    date: 2026-07-21
+    decided_by: user
+    statement: "Deterministic sdd-validate checks run through a versioned Python script using PyYAML; AI validation is reserved for semantic judgments that the script cannot establish."
+    rejected: ["Perform every validation check by reading artifacts only in AI context", "Implement a partial YAML parser instead of using PyYAML"]
+    rationale: "A scripted validator makes structural, reference, graph, and evidence-shape checks reproducible while retaining model judgment for whether content and evidence are semantically sufficient."
+    confirmation: "The sdd-validate skill invokes the bundled validator first, its dependency on PyYAML is declared, and automated fixtures cover valid and invalid artifact graphs."
+    scope: [skills/sdd-validate, scripts, tests]
+    tags: [validation, python, pyyaml, deterministic-checks]
 ---
 
 # Decision Ledger
