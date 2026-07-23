@@ -1,11 +1,11 @@
 {
-  "name": "codex-sdd-planner",
+  "name": "sdd-planner",
   "version": "3.2.0",
   "description": "Spec-driven development planning skills for research, requirements, designs, implementation plans, execution, review, debriefs, and validation.",
   "author": {
     "name": "Daniel Weiner"
   },
-  "repository": "https://github.com/danweinerdev/codex-sdd-planner-plugin",
+  "repository": "https://github.com/danweinerdev/sdd-planner",
   "license": "MIT",
   "keywords": ["planning", "specification", "development", "review"],
   "skills": "./skills/",
@@ -16,7 +16,7 @@
     "developerName": "Daniel Weiner",
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],
-    "websiteURL": "https://github.com/danweinerdev/codex-sdd-planner-plugin",
+    "websiteURL": "https://github.com/danweinerdev/sdd-planner",
     "defaultPrompt": [
       "Set up spec-driven planning for this repository.",
       "Create a specification and implementation plan for this feature.",
