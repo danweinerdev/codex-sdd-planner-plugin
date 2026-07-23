@@ -19,6 +19,11 @@ from pathlib import Path
 from typing import Any, Iterable, Sequence
 
 try:
+    from sdd_decision_validate import validate as validate_decision_ledgers
+except ImportError:
+    from scripts.sdd_decision_validate import validate as validate_decision_ledgers
+
+try:
     import yaml
 except ImportError:
     print(
@@ -128,6 +133,9 @@ class Validator:
     def error(self, artifact: Artifact | None, code: str, message: str, correction: str, line: int = 1, path: str | None = None, implicated: Iterable[str] = ()) -> None:
         self.out.append(Diagnostic("error", code, path or (artifact.rel if artifact else str(self.root)), line, message, correction, tuple(sorted(set(implicated)))))
 
+    def candidate(self, artifact: Artifact | None, code: str, message: str, correction: str, line: int = 1, path: str | None = None) -> None:
+        self.out.append(Diagnostic("candidate", code, path or (artifact.rel if artifact else str(self.root)), line, message, correction))
+
     def _configure_repositories(self) -> None:
         config = self.repo / "planning-config.json"
         if not config.is_file():
@@ -192,6 +200,7 @@ class Validator:
         self._graphs()
         self._traceability()
         self._decision_links()
+        self._focused_decision_logs()
         return sorted(self.out, key=lambda item: (item.path, item.line, item.code, item.message))
 
     def _discover(self) -> None:
@@ -1085,8 +1094,10 @@ class Validator:
                 self.error(artifact, "SDD115", f"Decision `{decision_id}` has invalid status.", "Use an allowed decision status.")
             if entry.get("kind") == "answered-question" and not entry.get("question"):
                 self.error(artifact, "SDD116", f"Answered question `{decision_id}` lacks `question`.", "Record the question.")
-            if entry.get("decided_by") not in {"user", "user-approved"}:
-                self.error(artifact, "SDD117", f"Decision `{decision_id}` has invalid `decided_by`.", "Use user or user-approved.")
+            if entry.get("decided_by") not in {"agent", "user", "user-approved"}:
+                self.error(artifact, "SDD117", f"Decision `{decision_id}` has invalid `decided_by`.", "Use agent, user, or user-approved as allowed by lifecycle status.")
+            if entry.get("decided_by") == "agent" and entry.get("status") != "proposed":
+                self.error(artifact, "SDD118", f"Decision `{decision_id}` attributes a non-proposed entry to agent.", "Use agent only for unconfirmed proposals; user acceptance changes provenance to user-approved.")
 
     def _citations(self, artifact: Artifact) -> None:
         body = no_comments(artifact.body)
@@ -1270,13 +1281,54 @@ class Validator:
                 if not self._scopes_overlap(left.get("scope"), right.get("scope")):
                     continue
                 if normalized(left.get("question")) and normalized(left.get("question")) == normalized(right.get("question")) and normalized(left.get("statement")) != normalized(right.get("statement")):
-                    self.error(artifact, "SDD147", f"`{left_id}` and `{right_id}` answer the same question differently.", "Ask the user to reconcile or separate scopes.")
+                    self.candidate(artifact, "SDD147", f"`{left_id}` and `{right_id}` answer the same question differently.", "Judge whether they conflict, refine one another, or have disjoint scope.")
                 if chosen_rejected(left, right) or chosen_rejected(right, left):
-                    self.error(artifact, "SDD148", f"`{left_id}` and `{right_id}` choose and reject the same option.", "Ask the user to reconcile the collision.")
+                    self.candidate(artifact, "SDD148", f"`{left_id}` and `{right_id}` choose and reject the same option.", "Judge whether they conflict or have disjoint scope.")
                 left_term = definition_term(left)
                 right_term = definition_term(right)
                 if left_term and left_term == right_term and normalized(left.get("statement")) != normalized(right.get("statement")):
-                    self.error(artifact, "SDD149", f"`{left_id}` and `{right_id}` define `{left_term}` differently.", "Ask the user to reconcile the definitions or separate their scopes.")
+                    self.candidate(artifact, "SDD149", f"`{left_id}` and `{right_id}` define `{left_term}` differently.", "Judge whether the definitions conflict or have disjoint scope.")
+
+    def _focused_decision_logs(self) -> None:
+        candidates: list[Path] = []
+        internal = self.root / "Decisions"
+        canonical = internal / "decisions.md"
+        if canonical.is_file():
+            candidates.append(canonical)
+        else:
+            candidates.extend(sorted(internal.glob("archive-*.md"))[:1])
+        for repository in {self.repo, *self.plan_repos.values()}:
+            canonical = repository / "DECISIONS.md"
+            if canonical.is_file():
+                candidates.append(canonical)
+            else:
+                candidates.extend(sorted(repository.glob("archive-*.md"))[:1])
+        seen: set[Path] = set()
+        for path in candidates:
+            directory = path.parent.resolve()
+            if directory in seen:
+                continue
+            seen.add(directory)
+            diagnostics, _, _ = validate_decision_ledgers(
+                path,
+                history=self.identity_mode != "historical" and git_root(path) is not None,
+            )
+            for item in diagnostics:
+                path = item.path
+                try:
+                    path = Path(path).resolve().relative_to(self.root).as_posix()
+                except ValueError:
+                    pass
+                self.out.append(
+                    Diagnostic(
+                        item.severity,
+                        item.code,
+                        str(path),
+                        item.line,
+                        item.message,
+                        item.correction,
+                    )
+                )
 
     def _is_live(self, artifact: Artifact) -> bool:
         if artifact.kind in {"debrief", "retro"}:
@@ -2306,6 +2358,7 @@ def select(diagnostics: list[Diagnostic], scope: str | None) -> list[Diagnostic]
         item
         for item in diagnostics
         if item.code == "SDD000"
+        or item.code.startswith("DLG")
         or item.path.startswith("@repo:")
         or any(item.path == prefix or item.path.startswith(prefix + "/") for prefix in prefixes)
         or any(any(path == prefix or path.startswith(prefix + "/") for prefix in prefixes) for path in item.implicated)
@@ -2348,16 +2401,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"sdd-validate: {operational_error}", file=sys.stderr)
         return 2
     diagnostics = select(all_diagnostics, args.scope)
+    operational = [item for item in diagnostics if item.severity == "operational"]
+    errors = [item for item in diagnostics if item.severity == "error"]
     if args.output == "json":
-        print(json.dumps({"valid": not diagnostics, "planning_root": str(root), "artifacts_inspected": len(validator.artifacts), "diagnostics": [asdict(item) for item in diagnostics]}, indent=2, sort_keys=True))
+        print(json.dumps({"valid": not errors and not operational, "planning_root": str(root), "artifacts_inspected": len(validator.artifacts), "diagnostics": [asdict(item) for item in diagnostics]}, indent=2, sort_keys=True))
     else:
-        print(f"{'Valid' if not diagnostics else 'Invalid'}: {root} ({len(validator.artifacts)} artifacts inspected)")
+        print(f"{'Valid' if not errors and not operational else 'Invalid'}: {root} ({len(validator.artifacts)} artifacts inspected)")
         for item in diagnostics:
             print(f"{item.severity.upper()} {item.code} {item.path}:{item.line}: {item.message}")
             print(f"  Required correction: {item.correction}")
         if not diagnostics:
             print("Checked structure, frontmatter, paths, identifiers, hierarchy, dependencies, reviews, decisions, and completion-evidence shape.")
-    return 0 if not diagnostics else 1
+    if operational:
+        return 2
+    return 0 if not errors else 1
 
 
 if __name__ == "__main__":

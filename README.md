@@ -37,6 +37,11 @@ integrity checks before applying model judgment to semantic sufficiency. The
 script requires PyYAML as declared in `requirements.txt` and supports text or
 JSON diagnostics suitable for local use and CI.
 
+Decision-ledger writes additionally run
+`scripts/sdd_decision_validate.py <ledger>`, a focused read-only validator for
+ledger format, archives, entry types and ids, supersession integrity,
+structural collision candidates, and accepted-entry immutability (D-0010).
+
 After plan approval, the `sdd-plan` skill conditionally hands the approved artifact to
 the independently installed `sdd-beads-publish` skill when that skill is
 available. The integration is capability-detected: `sdd-planner` has no hard

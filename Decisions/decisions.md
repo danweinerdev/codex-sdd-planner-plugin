@@ -106,6 +106,17 @@ decisions:
     confirmation: "sdd-implement emits implement_task without naming a runtime agent or model; runtime-adapter tests map it to implementer; model profile tests cover explicit selection and reasoner fallback."
     scope: [skills/sdd-implement, shared/agent-runtime.md, README.md]
     tags: [implementation, dispatch, collaboration, runtime-neutral, model-routing]
+  - id: D-0010
+    kind: decision
+    status: accepted
+    date: 2026-07-23
+    decided_by: user
+    statement: "Decision-ledger operations use a bundled deterministic validator for format and every safely machine-checkable invariant, while semantic collision judgment remains outside the script."
+    rejected: ["Rely only on model inspection to validate decision-ledger structure", "Treat semantic contradiction judgments as deterministic"]
+    rationale: "A focused validator catches malformed or inconsistent ledgers reproducibly before and after writes without pretending that differently worded decisions can be reconciled mechanically."
+    confirmation: "The decision-log convention and both decision-writing skills invoke the bundled validator, and automated fixtures cover valid and invalid ledger states."
+    scope: [shared/decision-log.md, skills/sdd-decide, skills/sdd-decision-log, scripts, tests]
+    tags: [decision-log, validation, python, pyyaml, deterministic-checks]
 ---
 
 # Decision Ledger

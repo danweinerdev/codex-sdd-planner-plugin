@@ -25,7 +25,7 @@ decisions:
     kind: decision            # decision | definition | answered-question | assumption
     status: accepted          # proposed | accepted | rejected | superseded
     date: YYYY-MM-DD
-    decided_by: user          # user | user-approved (agent-proposed, user confirmed)
+    decided_by: user          # user | user-approved | agent (agent only while proposed)
     statement: "One-sentence declarative truth — the lookup value."
     question: "What was asked?"          # required for kind: answered-question, optional otherwise
     rejected: [Option B, Option C]       # anti-choices explicitly decided against (collision fuel)
@@ -40,7 +40,7 @@ decisions:
 
 | Field | Required | Notes |
 |---|---|---|
-| `id`, `kind`, `status`, `date`, `decided_by`, `statement` | yes | `statement` must stand alone — a reader with no other context learns the truth from it |
+| `id`, `kind`, `status`, `date`, `decided_by`, `statement` | yes | `statement` must stand alone. `decided_by: agent` is valid only for an unconfirmed `proposed` entry; acceptance changes it to `user-approved` |
 | `rationale` | yes | one or two sentences; deeper deliberation goes in a body section |
 | `question` | for `answered-question` | verbatim or near-verbatim, so the same question is findable later |
 | `rejected`, `scope`, `tags` | recommended | these three power collision detection and scoped lookups |
@@ -51,9 +51,43 @@ decisions:
 
 - **Entries are immutable once `accepted`**, except `status` and `superseded_by`. A change of mind is a **new entry** that `supersedes` the old one — never an edit to the old statement.
 - **`rejected` entries are kept** with their rationale. They are negative truths that prevent relitigating.
-- **`proposed`** marks an entry awaiting user confirmation (e.g., drafted from a brainstorm recommendation the user hasn't endorsed). Only `accepted` entries bind future work; `proposed` entries are surfaced, not enforced. A `proposed` entry may still be edited freely — it isn't immutable yet.
-- **Accepting a `proposed` entry is an append-equivalent event.** Only the user can accept, and the full collision check below re-runs at acceptance time — entries accepted since the proposal was logged may collide with it. Flip `status` to `accepted` and update `date` only after the check passes.
+- **`proposed`** marks an entry awaiting user confirmation (e.g., drafted from a brainstorm recommendation the user hasn't endorsed). An agent-originated proposal uses `decided_by: agent`; only `accepted` entries bind future work, and `proposed` entries are surfaced rather than enforced. A `proposed` entry may still be edited freely — it isn't immutable yet.
+- **Accepting a `proposed` entry is an append-equivalent event.** Only the user can accept, and the full collision check below re-runs at acceptance time — entries accepted since the proposal was logged may collide with it. Flip `status` to `accepted`, set `decided_by: user-approved` for an agent-originated proposal, and update `date` only after the check passes.
 - **`assumption`-kind entries** may additionally carry `refresh_when` triggers (see `shared/frontmatter-schema.md`); an invalidated assumption is reconciled like any collision — flag every entry and artifact that cited it.
+
+## Deterministic Validation
+
+Before trusting or mutating a resolved ledger, and again after every mutation,
+run the bundled read-only validator (D-0010):
+
+```bash
+python3 <plugin-root>/scripts/sdd_decision_validate.py <resolved-ledger> --format json
+```
+
+The validator discovers `archive-*.md` siblings and checks UTF-8/LF and YAML
+frontmatter, canonical filenames and lifecycle status, common and entry field
+types, real ISO dates, decision id uniqueness, archive eligibility, safe relative
+scope syntax, optional body-section links, supersession existence/reciprocity/
+state/cycles, structural collision candidates among accepted and proposed
+entries, and Git-backed immutability of previously accepted entries. It is
+read-only. Exit `0` means no deterministic error was found, but the JSON may
+still contain `severity: candidate` diagnostics requiring the judgment pass
+below. Exit `1` means error diagnostics are authoritative structural findings,
+and exit `2` means the validator could not run. PyYAML is declared in
+`requirements.txt`; a dependency or operational failure is a stop, not
+permission to substitute model parsing.
+
+`--no-history` disables only the Git-backed immutability comparison and is for
+unversioned fixtures or an explicitly historical/non-worktree inspection. Do
+not use it during a normal ledger write.
+
+Diagnostics for same-question answers, chosen-versus-rejected options, and
+conflicting definitions are deterministic **collision candidates**, not an
+automatic verdict. The judgment pass below still decides whether candidates
+contradict, supersede, refine, or are unrelated, and only the user resolves a
+real collision. Full `sdd-validate` remains responsible for repository graph
+checks that a focused ledger command cannot prove, including scope resolution,
+artifact citations, and related-artifact scope connectivity.
 
 ## Capture — when to record
 

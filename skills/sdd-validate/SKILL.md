@@ -37,6 +37,13 @@ JSON diagnostics are authoritative findings, and exit `2` means validation
 could not run. Never execute artifact-recorded evidence commands as part of
 validation.
 
+For a direct decision-ledger write or focused ledger audit,
+`scripts/sdd_decision_validate.py <resolved-ledger> --format json` provides the
+stricter standalone format, archive, supersession, structural-candidate, and
+Git-backed immutability checks required by `shared/decision-log.md`. The full
+validator remains authoritative for cross-artifact scope resolution, citations,
+and related-graph checks.
+
 Identity mode defaults to `auto`, which performs current target-worktree and
 governing-projection checks for every populated evidence section. Use the
 equivalent explicit `--identity-mode current` immediately before a completion
@@ -159,10 +166,11 @@ Apply `shared/completion-evidence.md` literally:
 - Accepted decisions scoped to an artifact are cited by that artifact.
 - Every live-artifact citation to a `superseded` or `rejected` decision is
   reported as stale.
-- Deterministic collisions are reported: conflicting answers to the same
-  question, chosen options present in another entry's `rejected`, or divergent
-  definitions of the same term with overlapping scope. Judgment-required
-  potential conflicts are reported as questions, never auto-resolved.
+- Deterministic structural collision candidates are reported: differing answers
+  to the same question, chosen options present in another entry's `rejected`,
+  or divergent definitions of the same term with overlapping scope. Candidate
+  diagnostics are nonfatal and require model/user judgment; report potential
+  conflicts as questions and never auto-resolve them.
 
 ## Output
 

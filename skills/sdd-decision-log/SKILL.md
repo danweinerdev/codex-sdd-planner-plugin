@@ -13,13 +13,29 @@ The full convention (entry schema, lifecycle rules, collision procedure, distrib
 
 Resolve the ledger per `<plugin-root>/shared/decision-log.md` § Ledger location — `<planning-root>/Decisions/decisions.md` for an in-repo planning root, `<repo-root>/DECISIONS.md` when the planning root is external (decisions live with the repo they represent). Create it from `<plugin-root>/shared/templates/decision-log.md` if missing.
 
+Before trusting or mutating the resolved ledger, run:
+
+```bash
+python3 <plugin-root>/scripts/sdd_decision_validate.py <resolved-ledger> --format json
+```
+
+Exit `1` means repair the reported structural findings before continuing; exit
+`2` is an operational stop. Do not substitute manual YAML inspection. The
+script's structural collision diagnostics are candidates for the human/model
+judgment pass; inspect them even when exit status is `0`. They are never
+authority to reconcile entries automatically.
+
 ## When the user just decided something
 
 1. Recognize the moment: a stated choice between alternatives, a definition of a project term, an answer to a design question, or an explicit reversal. Status updates and task events are not decisions — the test is whether a future session would act differently for knowing it.
 2. **Run the collision check first** (`shared/decision-log.md` § Collision Detection): grep the ledger for the new entry's tags, scope, and key nouns; apply the structural checks; judge survivors. On `contradicts`/`supersedes` → STOP and present both entries for the user to reconcile. Never auto-resolve, never pick by recency.
-3. Append the entry (next sequential `D-NNNN`, `decided_by: user` only if the user actually stated the choice — otherwise `status: proposed`), update the ledger's `updated` date, and confirm the frontmatter still parses as YAML.
-4. Mention the recording in one line (e.g., "Recorded as D-0007 in the decision ledger") — no ceremony.
+3. Append the entry (next sequential `D-NNNN`; use `decided_by: user` and `status: accepted` only if the user stated the choice, otherwise `decided_by: agent` and `status: proposed`) and update the ledger's `updated` date.
+4. Rerun the deterministic validator. Correct a malformed write before continuing; never auto-resolve a collision diagnostic.
+5. Mention the recording in one line (e.g., "Recorded as D-0007 in the decision ledger") — no ceremony.
 
 ## When about to act on a governed topic
 
-Before drafting or implementing in an area the ledger may govern, check `accepted` entries whose tags/scope match. They are constraints: if the current ask contradicts one, surface the collision instead of silently following either side.
+Before drafting or implementing in an area the ledger may govern, validate the
+ledger, then check `accepted` entries whose tags/scope match. They are
+constraints: if the current ask contradicts one, surface the collision instead
+of silently following either side.
