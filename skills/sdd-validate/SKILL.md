@@ -29,7 +29,16 @@ python3 <plugin-root>/scripts/sdd_validate.py --format json
 ```
 
 Pass `--scope <planning-root-relative-path-or-artifact-name>` when the user
-named a narrower scope. PyYAML is a declared plugin dependency in
+named a narrower scope. Scoped validation includes every discoverable artifact
+selected by that path/name and follows transitive explicit `related` links; a
+plan scope therefore covers all plan-owned artifacts plus its governing related
+graph even when the scope names its README or one phase (D-0013). Bare names
+that match multiple artifact roots are rejected as ambiguous; use the reported
+planning-root-relative path. JSON output lists the exact successfully parsed
+`artifacts_in_scope`, while diagnostics for malformed files under the requested
+scope remain visible. Unresolved
+references remain diagnostics on the artifact that cites them; an existing but
+undiscoverable file is never claimed as validated. PyYAML is a declared plugin dependency in
 `<plugin-root>/requirements.txt`; if it is unavailable, report the validator's
 dependency error and stop rather than silently replacing deterministic checks
 with model judgment. Exit `0` means scripted checks passed, exit `1` means the

@@ -139,6 +139,17 @@ decisions:
     confirmation: "sdd-plan defines task boundaries as complete bisectable feature slices, plan review checks each proposed task as an independent commit boundary, sdd-implement commits one such task at a time, and templates expose the rule to generated plans."
     scope: [README.md, shared/frontmatter-schema.md, shared/agent-prompts/plan-reviewer.md, shared/templates/plan-phase.md, skills/sdd-plan, skills/sdd-implement, tests]
     tags: [planning, tasks, features, git, commits, bisectability, workflow]
+  - id: D-0013
+    kind: decision
+    status: accepted
+    date: 2026-07-23
+    decided_by: user
+    statement: "A scoped SDD validation resolves the selected artifact set and follows transitive explicit related links, so plan validation covers plan-owned artifacts and their governing related-artifact graph while excluding unrelated artifact findings."
+    rejected: ["Keep scoped validation limited to path-prefix filtering", "Maintain a separate temporary graph-validator wrapper", "Claim unparsed files were validated merely because a related path exists"]
+    rationale: "Graph-aware scope makes focused validation match the SDD intent graph without duplicating the validator or hiding the distinction between discoverable validated artifacts and unresolved references."
+    confirmation: "sdd_validate.py computes a transitive closure over discovered artifacts for --scope, preserves global operational and decision-ledger diagnostics, reports artifacts_in_scope, and tests plan-owned, transitive-related, unrelated, unresolved, and severity behavior."
+    scope: [scripts/sdd_validate.py, skills/sdd-validate, tests]
+    tags: [validation, scope, graph, related-artifacts, deterministic-checks]
 ---
 
 # Decision Ledger

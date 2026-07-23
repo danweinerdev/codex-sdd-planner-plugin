@@ -677,6 +677,238 @@ class ValidatorTests(unittest.TestCase):
             self.assertEqual(2, unknown.returncode)
             self.assertIn("does not resolve", json.loads(unknown.stdout)["error"])
 
+    def test_scoped_validation_follows_transitive_related_graph(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_valid_tree(root)
+            spec_path = root / "Specs" / "Feature" / "README.md"
+            spec_path.write_text(
+                spec_path.read_text(encoding="utf-8").replace(
+                    "related: []", "related: [Designs/Feature]", 1
+                ),
+                encoding="utf-8",
+            )
+            design = """
+            ---
+            title: Feature Design
+            type: design
+            status: approved
+            created: 2026-07-23
+            updated: 2026-07-23
+            tags: [feature]
+            related: [Research/legacy.txt]
+            ---
+            # Feature Design
+            ## Overview
+            Feature design.
+            ## Design Decisions
+            Decisions.
+            ## Error Handling
+            Errors.
+            ## Testing Strategy
+            Tests.
+            ## Migration / Rollout
+            Rollout.
+            """
+            write(root, "Designs/Feature/README.md", design)
+            write(
+                root,
+                "Designs/Other/README.md",
+                design.replace("Feature Design", "Other Design"),
+            )
+            legacy = root / "Research" / "legacy.txt"
+            legacy.parent.mkdir(parents=True, exist_ok=True)
+            legacy.write_text("not a discoverable SDD artifact\n", encoding="utf-8")
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--root",
+                    str(root),
+                    "--scope",
+                    "Plans/Feature/README.md",
+                    "--format",
+                    "json",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            payload = json.loads(result.stdout)
+            self.assertEqual(1, result.returncode, result.stderr)
+            self.assertEqual(
+                {
+                    "Plans/Feature/README.md",
+                    "Plans/Feature/01-Build.md",
+                    "Specs/Feature/README.md",
+                    "Designs/Feature/README.md",
+                },
+                set(payload["artifacts_in_scope"]),
+            )
+            self.assertTrue(
+                any(item["path"] == "Designs/Feature/README.md" for item in payload["diagnostics"])
+            )
+            self.assertFalse(
+                any(item["path"] == "Designs/Other/README.md" for item in payload["diagnostics"])
+            )
+            self.assertNotIn("Research/legacy.txt", payload["artifacts_in_scope"])
+
+    def test_scope_aliases_resolve_or_report_ambiguity(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_valid_tree(root)
+            write(
+                root,
+                "Research/Topic.md",
+                """
+                ---
+                title: Topic
+                type: research
+                status: active
+                created: 2026-07-23
+                updated: 2026-07-23
+                tags: [topic]
+                related: []
+                ---
+                # Topic
+                ## Context
+                Context.
+                ## Findings
+                Findings.
+                ## Analysis
+                Analysis.
+                ## Open Questions
+                None.
+                """,
+            )
+            validator = sdd_validate.Validator(root, root)
+            diagnostics = validator.run()
+            alias = sdd_validate.resolve_scope(validator, "Specs/Feature/README")
+            self.assertIsNone(alias.error)
+            self.assertIn("Specs/Feature/README.md", alias.artifacts)
+
+            flat = sdd_validate.resolve_scope(validator, "Topic")
+            self.assertIsNone(flat.error)
+            self.assertEqual(frozenset({"Research/Topic.md"}), flat.artifacts)
+
+            ambiguous = sdd_validate.resolve_scope(validator, "Feature")
+            self.assertIn("ambiguous", ambiguous.error or "")
+            self.assertEqual(
+                ("Plans/Feature", "Specs/Feature/README.md"),
+                ambiguous.roots,
+            )
+
+            deleted = sdd_validate.resolve_scope(
+                validator,
+                "Specs/Deleted/README.md",
+                diagnostics
+                + [
+                    sdd_validate.Diagnostic(
+                        "error",
+                        "SDD164",
+                        "Specs/Deleted/README.md",
+                        1,
+                        "deleted",
+                        "restore",
+                    )
+                ],
+            )
+            self.assertIsNone(deleted.error)
+            self.assertEqual(("Specs/Deleted/README.md",), deleted.roots)
+
+            (root / "README.md").write_text("ordinary repository file\n", encoding="utf-8")
+            for unsafe in ("README.md", "../outside", str(root / "README.md")):
+                self.assertIsNotNone(
+                    sdd_validate.resolve_scope(validator, unsafe, diagnostics).error
+                )
+
+            write(root, "Plans/Mixed/README.md", plan_document().replace("Feature Plan", "Mixed Plan"))
+            write(root, "Specs/Mixed/README.md", "not frontmatter\n")
+            mixed_validator = sdd_validate.Validator(root, root)
+            mixed_diagnostics = mixed_validator.run()
+            mixed = sdd_validate.resolve_scope(
+                mixed_validator, "Mixed", mixed_diagnostics
+            )
+            self.assertIn("ambiguous", mixed.error or "")
+            self.assertEqual(
+                ("Plans/Mixed", "Specs/Mixed/README.md"),
+                mixed.roots,
+            )
+
+    def test_scoped_malformed_artifact_keeps_parse_diagnostic(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.make_valid_tree(root)
+            malformed = root / "Plans" / "Feature" / "02-Broken.md"
+            malformed.write_text("not frontmatter\n", encoding="utf-8")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--root",
+                    str(root),
+                    "--scope",
+                    "Plans/Feature",
+                    "--format",
+                    "json",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            payload = json.loads(result.stdout)
+            self.assertEqual(1, result.returncode, result.stderr)
+            self.assertTrue(
+                any(
+                    item["path"] == "Plans/Feature/02-Broken.md"
+                    and item["code"] == "SDD004"
+                    for item in payload["diagnostics"]
+                )
+            )
+            self.assertNotIn("Plans/Feature/02-Broken.md", payload["artifacts_in_scope"])
+
+            malformed_spec = root / "Specs" / "Feature" / "extra.md"
+            malformed_spec.write_text("not frontmatter\n", encoding="utf-8")
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--root",
+                    str(root),
+                    "--scope",
+                    "Specs/Feature",
+                    "--format",
+                    "json",
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            payload = json.loads(result.stdout)
+            self.assertEqual(1, result.returncode, result.stderr)
+            self.assertTrue(
+                any(item["path"] == "Specs/Feature/extra.md" for item in payload["diagnostics"])
+            )
+
+    def test_graph_selection_preserves_global_diagnostics_and_candidates(self) -> None:
+        diagnostics = [
+            sdd_validate.Diagnostic("error", "SDD020", "Designs/Feature/README.md", 1, "feature", "fix"),
+            sdd_validate.Diagnostic("error", "SDD020", "Designs/Other/README.md", 1, "other", "fix"),
+            sdd_validate.Diagnostic("candidate", "DLG060", "Decisions/decisions.md", 1, "candidate", "judge"),
+            sdd_validate.Diagnostic("error", "SDD145", "Decisions/decisions.md", 1, "decision scope", "fix"),
+            sdd_validate.Diagnostic("operational", "SDD999", "outside", 1, "operation", "repair"),
+        ]
+        selected = sdd_validate.select(
+            diagnostics,
+            "Plans/Feature",
+            {"Plans/Feature/README.md", "Designs/Feature/README.md"},
+        )
+        self.assertEqual(
+            {"feature", "candidate", "decision scope", "operation"},
+            {item.message for item in selected},
+        )
+
     def test_code_spanned_dirty_evidence_requires_and_validates_snapshot(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

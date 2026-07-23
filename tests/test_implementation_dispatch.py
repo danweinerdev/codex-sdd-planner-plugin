@@ -90,6 +90,11 @@ class ImplementationDispatchTests(unittest.TestCase):
         self.assertIn("id: D-0012", decisions)
         self.assertIn("clean, complete, and independently bisectable", decisions)
 
+    def test_graph_aware_scope_decision_is_recorded(self):
+        decisions = (ROOT / "Decisions" / "decisions.md").read_text(encoding="utf-8")
+        self.assertIn("id: D-0013", decisions)
+        self.assertIn("transitive explicit related links", decisions)
+
 
 if __name__ == "__main__":
     unittest.main()

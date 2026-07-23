@@ -115,6 +115,13 @@ class Artifact:
         return 1
 
 
+@dataclass(frozen=True)
+class ScopeSelection:
+    artifacts: frozenset[str]
+    roots: tuple[str, ...]
+    error: str | None = None
+
+
 class Validator:
     def __init__(self, root: Path, repo: Path, identity_mode: str = "auto") -> None:
         self.root = root.resolve()
@@ -2486,32 +2493,210 @@ def resolve_roots(start: Path, explicit: str | None) -> tuple[Path, Path]:
         current = current.parent
 
 
-def select(diagnostics: list[Diagnostic], scope: str | None) -> list[Diagnostic]:
+def path_matches_root(path: str, root: str) -> bool:
+    return path == root or path.startswith(root.rstrip("/") + "/")
+
+
+def scope_root_for_artifact(artifact: Artifact) -> str:
+    parts = Path(artifact.rel).parts
+    if len(parts) >= 2 and parts[0] == "Plans":
+        return f"Plans/{parts[1]}"
+    return artifact.rel
+
+
+def resolve_scope(
+    validator: Validator,
+    scope: str | None,
+    diagnostics: Sequence[Diagnostic] = (),
+) -> ScopeSelection:
+    if not scope:
+        all_paths = frozenset(artifact.rel for artifact in validator.artifacts)
+        return ScopeSelection(all_paths, ())
+    raw_value = scope.strip()
+    raw_path = Path(raw_value)
+    if raw_path.is_absolute() or "\\" in raw_value:
+        return ScopeSelection(
+            frozenset(),
+            (),
+            f"scope `{scope}` is unsafe; use a planning-root-relative artifact path without `.`, `..`, or backslashes",
+        )
+    value = raw_value.strip("/")
+    if not value:
+        return ScopeSelection(frozenset(), (), "scope is empty")
+    path = Path(value)
+    if any(part in {"", ".", ".."} for part in path.parts):
+        return ScopeSelection(
+            frozenset(),
+            (),
+            f"scope `{scope}` is unsafe; use a planning-root-relative artifact path without `.`, `..`, or backslashes",
+        )
+
+    diagnostic_paths = {
+        item.path
+        for item in diagnostics
+        if not item.path.startswith("@repo:") and not Path(item.path).is_absolute()
+    }
+
+    def has_diagnostic(root: str) -> bool:
+        return any(path_matches_root(candidate, root) for candidate in diagnostic_paths)
+
+    def recognized_artifact_path(candidate: str) -> bool:
+        parts = Path(candidate).parts
+        return bool(parts) and parts[0] in ARTIFACT_DIRS and candidate.endswith(".md")
+
+    def root_for_unparsed(candidate: str) -> str:
+        parts = Path(candidate).parts
+        if len(parts) >= 2 and parts[0] == "Plans":
+            return f"Plans/{parts[1]}"
+        return candidate
+
+    roots: list[str] = []
+    physical_value = validator.root / value
+    if physical_value.is_dir() and (
+        any(path_matches_root(artifact.rel, value) for artifact in validator.artifacts)
+        or has_diagnostic(value)
+    ):
+        roots = [value]
+    direct = validator.resolve(value)
+    if not roots and direct:
+        roots = [scope_root_for_artifact(direct)]
+    if not roots:
+        explicit_roots = {
+            artifact.rel
+            for artifact in validator.artifacts
+            if path_matches_root(artifact.rel, value)
+        }
+        if explicit_roots:
+            roots = [value]
+        else:
+            physical_candidates = (value, f"{value}/README.md", f"{value}.md")
+            physical = next(
+                (
+                    candidate
+                    for candidate in physical_candidates
+                    if recognized_artifact_path(candidate)
+                    and (validator.root / candidate).is_file()
+                    and has_diagnostic(candidate)
+                ),
+                None,
+            )
+            if physical:
+                roots = [root_for_unparsed(physical)]
+            else:
+                historical = next(
+                    (
+                        candidate
+                        for candidate in physical_candidates
+                        if recognized_artifact_path(candidate)
+                        and candidate in diagnostic_paths
+                    ),
+                    None,
+                )
+                if historical:
+                    roots = [root_for_unparsed(historical)]
+            if not roots and "/" not in value:
+                aliases: list[str] = []
+                for dirname in ARTIFACT_DIRS:
+                    candidate = f"{dirname}/{value}"
+                    resolved = validator.resolve(candidate)
+                    if resolved:
+                        aliases.append(scope_root_for_artifact(resolved))
+                    elif any(
+                        path_matches_root(artifact.rel, candidate)
+                        for artifact in validator.artifacts
+                    ):
+                        aliases.append(candidate)
+                    else:
+                        alias_candidates = (candidate, f"{candidate}/README.md", f"{candidate}.md")
+                        diagnostic_candidate = next(
+                            (
+                                path
+                                for path in alias_candidates
+                                if recognized_artifact_path(path)
+                                and (
+                                    path in diagnostic_paths
+                                    or ((validator.root / path).is_file() and has_diagnostic(path))
+                                )
+                            ),
+                            None,
+                        )
+                        if diagnostic_candidate:
+                            aliases.append(root_for_unparsed(diagnostic_candidate))
+                aliases = sorted(set(aliases))
+                if len(aliases) > 1:
+                    return ScopeSelection(
+                        frozenset(),
+                        tuple(aliases),
+                        f"scope `{scope}` is ambiguous; use one of: {', '.join(aliases)}",
+                    )
+                if aliases:
+                    roots = aliases
+    if not roots:
+        return ScopeSelection(frozenset(), (), f"scope `{scope}` does not resolve to an artifact")
+
+    selected = {
+        artifact.rel
+        for artifact in validator.artifacts
+        if any(path_matches_root(artifact.rel, root) for root in roots)
+    }
+    pending = list(selected)
+    while pending:
+        artifact = validator.by_path.get(pending.pop())
+        if artifact is None:
+            continue
+        related = artifact.meta.get("related", [])
+        if not isinstance(related, list):
+            continue
+        for reference in related:
+            target = validator.resolve(reference) if isinstance(reference, str) else None
+            if target and target.rel not in selected:
+                target_root = scope_root_for_artifact(target)
+                additions = {
+                    candidate.rel
+                    for candidate in validator.artifacts
+                    if path_matches_root(candidate.rel, target_root)
+                }
+                for addition in additions - selected:
+                    selected.add(addition)
+                    pending.append(addition)
+    return ScopeSelection(frozenset(selected), tuple(roots))
+
+
+def select(
+    diagnostics: list[Diagnostic],
+    scope: str | None,
+    artifacts_in_scope: set[str] | None = None,
+    scope_roots: tuple[str, ...] | None = None,
+    decision_paths: set[str] | None = None,
+) -> list[Diagnostic]:
     if not scope:
         return diagnostics
-    value = scope.strip().strip("/")
-    prefixes = (value, f"Plans/{value}", f"Specs/{value}", f"Designs/{value}")
+    roots = scope_roots or (scope.strip().strip("/"),)
+
+    def path_selected(path: str) -> bool:
+        return (
+            (artifacts_in_scope is not None and path in artifacts_in_scope)
+            or any(path_matches_root(path, root) for root in roots)
+        )
+
     return [
         item
         for item in diagnostics
-        if item.code == "SDD000"
+        if item.severity == "operational"
+        or item.code == "SDD000"
         or item.code.startswith("DLG")
         or item.path.startswith("@repo:")
-        or any(item.path == prefix or item.path.startswith(prefix + "/") for prefix in prefixes)
-        or any(any(path == prefix or path.startswith(prefix + "/") for prefix in prefixes) for path in item.implicated)
+        or item.path.startswith("Decisions/")
+        or (decision_paths is not None and item.path in decision_paths)
+        or path_selected(item.path)
+        or any(path_selected(path) for path in item.implicated)
     ]
-
-
-def scope_resolves(artifacts: list[Artifact], scope: str) -> bool:
-    value = scope.strip().strip("/")
-    prefixes = (value, f"Plans/{value}", f"Specs/{value}", f"Designs/{value}")
-    return any(any(item.rel == prefix or item.rel.startswith(prefix + "/") for prefix in prefixes) for item in artifacts)
 
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
     result.add_argument("--root", help="Planning root; defaults through planning-config.json")
-    result.add_argument("--scope", help="Limit reported findings to a path or artifact name")
+    result.add_argument("--scope", help="Limit findings to an artifact/path and its transitive explicit related-artifact graph")
     result.add_argument("--format", choices=("text", "json"), default="text", dest="output")
     result.add_argument("--identity-mode", choices=("auto", "current", "historical"), default="auto", help="Use current-worktree checks (auto/current) or validate historical durable objects only")
     return result
@@ -2526,24 +2711,33 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
     validator = Validator(root, repo, args.identity_mode)
     all_diagnostics = validator.run()
+    scope_selection = resolve_scope(validator, args.scope, all_diagnostics)
     operational_error = None
     if not validator.artifacts:
         operational_error = "planning root contains no discoverable SDD artifacts"
-    elif args.scope and not scope_resolves(validator.artifacts, args.scope):
-        operational_error = f"scope `{args.scope}` does not resolve to an artifact"
+    elif scope_selection.error:
+        operational_error = scope_selection.error
     if operational_error:
         if args.output == "json":
             print(json.dumps({"valid": False, "planning_root": str(root), "artifacts_inspected": len(validator.artifacts), "error": operational_error, "diagnostics": []}, indent=2, sort_keys=True))
         else:
             print(f"sdd-validate: {operational_error}", file=sys.stderr)
         return 2
-    diagnostics = select(all_diagnostics, args.scope)
+    artifacts_in_scope = set(scope_selection.artifacts)
+    diagnostics = select(
+        all_diagnostics,
+        args.scope,
+        artifacts_in_scope,
+        scope_selection.roots,
+        {artifact.rel for artifact in validator.artifacts if artifact.kind == "decision-log"},
+    )
     operational = [item for item in diagnostics if item.severity == "operational"]
     errors = [item for item in diagnostics if item.severity == "error"]
     if args.output == "json":
-        print(json.dumps({"valid": not errors and not operational, "planning_root": str(root), "artifacts_inspected": len(validator.artifacts), "diagnostics": [asdict(item) for item in diagnostics]}, indent=2, sort_keys=True))
+        print(json.dumps({"valid": not errors and not operational, "planning_root": str(root), "artifacts_inspected": len(validator.artifacts), "artifacts_in_scope": sorted(artifacts_in_scope), "diagnostics": [asdict(item) for item in diagnostics]}, indent=2, sort_keys=True))
     else:
-        print(f"{'Valid' if not errors and not operational else 'Invalid'}: {root} ({len(validator.artifacts)} artifacts inspected)")
+        scope_summary = f", {len(artifacts_in_scope)} in scope" if args.scope else ""
+        print(f"{'Valid' if not errors and not operational else 'Invalid'}: {root} ({len(validator.artifacts)} artifacts inspected{scope_summary})")
         for item in diagnostics:
             print(f"{item.severity.upper()} {item.code} {item.path}:{item.line}: {item.message}")
             print(f"  Required correction: {item.correction}")
